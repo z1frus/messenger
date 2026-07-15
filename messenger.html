@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой Мессенджер</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, sans-serif; }
+        body { background: #0b141a; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        #app { width: 100%; max-width: 900px; height: 700px; background: #1a2c38; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); display: flex; flex-direction: column; overflow: hidden; }
+        #loginScreen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 40px; background: #1a2c38; }
+        #loginScreen h1 { color: #25d366; font-size: 42px; margin-bottom: 30px; }
+        #loginScreen input { width: 100%; max-width: 350px; padding: 16px 20px; border-radius: 30px; border: none; background: #2a3942; color: white; font-size: 18px; text-align: center; outline: none; }
+        #loginScreen input::placeholder { color: #6a7a82; }
+        #loginScreen button { width: 100%; max-width: 350px; padding: 16px; margin-top: 15px; border-radius: 30px; border: none; background: #25d366; color: white; font-weight: bold; font-size: 18px; cursor: pointer; }
+        #loginScreen button:hover { background: #20b858; }
+        #loginError { color: #ff6b6b; margin-top: 10px; font-size: 14px; min-height: 20px; }
+        #mainScreen { display: none; flex-direction: column; height: 100%; }
+        #header { background: #1a2c38; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a3942; flex-shrink: 0; }
+        #header span { color: white; font-weight: bold; font-size: 16px; }
+        #header span::before { content: "✅ "; }
+        #logoutBtn { background: none; border: none; color: #aebac1; cursor: pointer; font-size: 14px; padding: 5px 10px; border-radius: 5px; }
+        #logoutBtn:hover { color: #ff6b6b; background: rgba(255,107,107,0.1); }
+        #chatContainer { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+        #contactsPanel { width: 280px; min-width: 200px; background: #1a2c38; border-right: 1px solid #2a3942; display: flex; flex-direction: column; flex-shrink: 0; }
+        #contactsPanel h3 { color: #aebac1; font-size: 13px; padding: 12px 15px; border-bottom: 1px solid #2a3942; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
+        #contactsList { flex: 1; overflow-y: auto; padding: 5px 0; }
+        .contact-item { padding: 12px 15px; color: white; cursor: pointer; border-bottom: 1px solid #1e2d36; display: flex; justify-content: space-between; align-items: center; }
+        .contact-item:hover { background: #2a3942; }
+        .contact-item.active { background: #2a3942; border-left: 3px solid #25d366; }
+        .contact-item .badge { background: #ff6b6b; color: white; border-radius: 50%; padding: 2px 9px; font-size: 12px; font-weight: bold; min-width: 22px; text-align: center; }
+        #addContactArea { display: flex; padding: 10px; gap: 5px; border-top: 1px solid #2a3942; flex-shrink: 0; }
+        #addContactArea input { flex: 1; padding: 8px 12px; border-radius: 20px; border: none; background: #2a3942; color: white; outline: none; font-size: 14px; }
+        #addContactArea input::placeholder { color: #6a7a82; }
+        #addContactBtn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 8px 18px; color: rgba(255,255,255,0.7); font-weight: bold; cursor: pointer; font-size: 18px; }
+        #addContactBtn:hover { background: rgba(255,255,255,0.25); color: rgba(255,255,255,0.9); }
+        #chatPanel { flex: 1; display: flex; flex-direction: column; background: #0b141a; min-width: 0; }
+        #chatHeader { padding: 12px 20px; background: #1a2c38; color: white; font-weight: bold; border-bottom: 1px solid #2a3942; flex-shrink: 0; font-size: 16px; }
+        #messagesArea { flex: 1; padding: 15px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+        .message { max-width: 70%; padding: 10px 16px; border-radius: 18px; font-size: 15px; word-wrap: break-word; }
+        .message.sent { align-self: flex-end; background: #25d366; color: white; border-bottom-right-radius: 4px; }
+        .message.received { align-self: flex-start; background: #1a2c38; color: white; border-bottom-left-radius: 4px; }
+        .message small { display: block; font-size: 10px; opacity: 0.7; margin-top: 4px; }
+        .message .msg-from { font-size: 12px; font-weight: bold; color: #aebac1; margin-bottom: 2px; }
+        #inputArea { display: none; padding: 10px 15px; background: #1a2c38; gap: 8px; flex-shrink: 0; border-top: 1px solid #2a3942; }
+        #inputArea input { flex: 1; padding: 10px 18px; border-radius: 25px; border: none; background: #2a3942; color: white; outline: none; font-size: 15px; }
+        #inputArea input::placeholder { color: #6a7a82; }
+        #inputArea button { background: #25d366; border: none; border-radius: 25px; padding: 10px 25px; color: white; font-weight: bold; cursor: pointer; }
+        #inputArea button:hover { background: #20b858; }
+        #noChatSelected { color: #aebac1; display: flex; align-items: center; justify-content: center; height: 100%; font-size: 18px; flex-direction: column; gap: 10px; }
+        #noChatSelected span { font-size: 48px; }
+        @media (max-width: 600px) { #contactsPanel { width: 40%; min-width: 120px; } #loginScreen h1 { font-size: 30px; } #loginScreen input, #loginScreen button { max-width: 100%; } }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="loginScreen">
+        <h1>💬 Мессенджер</h1>
+        <input type="text" id="loginInput" placeholder="Введите ваш ник..." maxlength="20">
+        <button id="loginBtn">Войти</button>
+        <div id="loginError"></div>
+    </div>
+    <div id="mainScreen">
+        <div id="header">
+            <span id="currentUser">Пользователь</span>
+            <button id="logoutBtn">🚪 Выйти</button>
+        </div>
+        <div id="chatContainer">
+            <div id="contactsPanel">
+                <h3>📋 Контакты</h3>
+                <div id="contactsList"></div>
+                <div id="addContactArea">
+                    <input type="text" id="newContactInput" placeholder="Имя контакта">
+                    <button id="addContactBtn">➕</button>
+                </div>
+            </div>
+            <div id="chatPanel">
+                <div id="chatHeader">💬 Выберите контакт</div>
+                <div id="messagesArea">
+                    <div id="noChatSelected"><span>👈</span>Выберите контакт слева</div>
+                </div>
+                <div id="inputArea">
+                    <input type="text" id="messageInput" placeholder="Введите сообщение...">
+                    <button id="sendBtn">📨 Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+const STORAGE_KEY = 'myMessenger_v3';
+let data = { currentUser: null, contacts: [], messages: {} };
+const loginScreen = document.getElementById('loginScreen');
+const mainScreen = document.getElementById('mainScreen');
+const loginInput = document.getElementById('loginInput');
+const loginBtn = document.getElementById('loginBtn');
+const loginError = document.getElementById('loginError');
+const currentUserSpan = document.getElementById('currentUser');
+const logoutBtn = document.getElementById('logoutBtn');
+const contactsList = document.getElementById('contactsList');
+const newContactInput = document.getElementById('newContactInput');
+const addContactBtn = document.getElementById('addContactBtn');
+const chatHeader = document.getElementById('chatHeader');
+const messagesArea = document.getElementById('messagesArea');
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+const noChatSelected = document.getElementById('noChatSelected');
+const inputArea = document.getElementById('inputArea');
+let selectedContact = null;
+let channel = null;
+
+function loadData() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) { try { const parsed = JSON.parse(saved); data = parsed; } catch(e) {} }
+    if (!data.messages) data.messages = {};
+    if (!data.contacts) data.contacts = [];
+}
+function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+function playNotificationSound() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.frequency.value = 880;
+        oscillator.type = 'sine';
+        gainNode.gain.value = 0.15;
+        oscillator.start();
+        setTimeout(() => oscillator.stop(), 200);
+    } catch(e) {}
+}
+function login(username) {
+    username = username.trim();
+    if (!username) { loginError.textContent = '❌ Введите ник!'; return; }
+    if (username.length > 20) { loginError.textContent = '❌ Ник не длиннее 20 символов'; return; }
+    data.currentUser = username;
+    saveData();
+    showMainScreen();
+    renderContacts();
+    clearChat();
+    loginError.textContent = '';
+}
+function logout() {
+    data.currentUser = null;
+    saveData();
+    showLoginScreen();
+    if (channel) { try { channel.close(); } catch(e) {} channel = null; }
+}
+function showMainScreen() {
+    loginScreen.style.display = 'none';
+    mainScreen.style.display = 'flex';
+    currentUserSpan.textContent = data.currentUser;
+    initBroadcast();
+}
+function showLoginScreen() {
+    loginScreen.style.display = 'flex';
+    mainScreen.style.display = 'none';
+    loginInput.value = '';
+    selectedContact = null;
+}
+function renderContacts() {
+    contactsList.innerHTML = '';
+    if (!data.contacts || data.contacts.length === 0) {
+        contactsList.innerHTML = '<div style="color:#aebac1;padding:15px;font-size:14px;text-align:center;">Нет контактов<br><span style="font-size:12px;">Добавьте ниже</span></div>';
+        return;
+    }
+    data.contacts.forEach(contact => {
+        const div = document.createElement('div');
+        div.className = 'contact-item';
+        if (selectedContact === contact) div.classList.add('active');
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = contact;
+        div.appendChild(nameSpan);
+        const msgs = data.messages[contact] || [];
+        const unread = msgs.filter(m => m.from !== data.currentUser && !m.read).length;
+        if (unread > 0 && selectedContact !== contact) {
+            const badge = document.createElement('span');
+            badge.className = 'badge';
+            badge.textContent = unread;
+            div.appendChild(badge);
+        }
+        div.onclick = () => selectContact(contact);
+        contactsList.appendChild(div);
+    });
+}
+function addContact(name) {
+    name = name.trim();
+    if (!name) { alert('Введите имя контакта'); return; }
+    if (name === data.currentUser) { alert('❌ Нельзя добавить себя'); return; }
+    if (data.contacts.includes(name)) { alert('⚠️ Контакт уже есть'); return; }
+    data.contacts.push(name);
+    if (!data.messages[name]) data.messages[name] = [];
+    saveData();
+    renderContacts();
+    newContactInput.value = '';
+    selectContact(name);
+}
+function selectContact(name) {
+    if (!data.contacts.includes(name)) return;
+    selectedContact = name;
+    if (data.messages[name]) {
+        let changed = false;
+        data.messages[name].forEach(m => { if (m.from !== data.currentUser && !m.read) { m.read = true; changed = true; } });
+        if (changed) saveData();
+    }
+    renderContacts();
+    renderMessages(name);
+    chatHeader.textContent = '💬 ' + name;
+    inputArea.style.display = 'flex';
+    noChatSelected.style.display = 'none';
+    messageInput.focus();
+}
+function renderMessages(contact) {
+    messagesArea.innerHTML = '';
+    const msgs = data.messages[contact] || [];
+    if (msgs.length === 0) {
+        messagesArea.innerHTML = '<div style="color:#aebac1;text-align:center;padding:30px;font-size:15px;">📭 Нет сообщений</div>';
+        return;
+    }
+    msgs.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'message ' + (msg.from === data.currentUser ? 'sent' : 'received');
+        let html = '';
+        if (msg.from !== data.currentUser) html += `<div class="msg-from">${msg.from}</div>`;
+        html += msg.text + `<small>${msg.time || ''}</small>`;
+        div.innerHTML = html;
+        messagesArea.appendChild(div);
+    });
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+}
+function sendMessage() {
+    if (!selectedContact) { alert('Выберите контакт слева'); return; }
+    const text = messageInput.value.trim();
+    if (!text) return;
+    const time = new Date().toLocaleTimeString();
+    const msg = { from: data.currentUser, text: text, time: time, read: true, id: Date.now() + '_' + Math.random().toString(36).substr(2, 6) };
+    if (!data.messages[selectedContact]) data.messages[selectedContact] = [];
+    data.messages[selectedContact].push(msg);
+    saveData();
+    renderMessages(selectedContact);
+    messageInput.value = '';
+    broadcastMessage(selectedContact, msg);
+}
+function clearChat() {
+    messagesArea.innerHTML = `<div id="noChatSelected" style="color:#aebac1;display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:10px;"><span style="font-size:48px;">👈</span>Выберите контакт слева</div>`;
+    chatHeader.textContent = '💬 Выберите контакт';
+    inputArea.style.display = 'none';
+    selectedContact = null;
+    renderContacts();
+}
+function receiveMessage(contact, msg) {
+    if (msg.from === data.currentUser) return;
+    if (!data.contacts.includes(contact)) data.contacts.push(contact);
+    if (!data.messages[contact]) data.messages[contact] = [];
+    const msgToSave = { ...msg, read: false };
+    data.messages[contact].push(msgToSave);
+    saveData();
+    if (selectedContact === contact) { renderMessages(contact); } else { renderContacts(); document.title = `📩 ${contact}: ${msg.text.substring(0, 20)}`; setTimeout(() => { document.title = 'Мой Мессенджер'; }, 4000); playNotificationSound(); }
+}
+function initBroadcast() {
+    try {
+        if (channel) { try { channel.close(); } catch(e) {} }
+        channel = new BroadcastChannel('messenger_channel_v3');
+        channel.onmessage = (e) => { const { contact, msg } = e.data; receiveMessage(contact, msg); };
+    } catch(e) {}
+}
+function broadcastMessage(contact, msg) { if (channel) { try { channel.postMessage({ contact, msg }); } catch(e) {} } }
+loginBtn.onclick = () => login(loginInput.value);
+loginInput.onkeydown = (e) => { if (e.key === 'Enter') login(loginInput.value); };
+logoutBtn.onclick = logout;
+addContactBtn.onclick = () => addContact(newContactInput.value);
+newContactInput.onkeydown = (e) => { if (e.key === 'Enter') addContact(newContactInput.value); };
+sendBtn.onclick = sendMessage;
+messageInput.onkeydown = (e) => { if (e.key === 'Enter') sendMessage(); };
+loadData();
+if (data.currentUser) { showMainScreen(); renderContacts(); clearChat(); } else { showLoginScreen(); }
+</script>
+</body>
+</html>
